@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מי מרגיש כמוני?</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;700;900&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Heebo', sans-serif;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 50%, #ffd166 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            direction: rtl;
+        }
+
+        .header {
+            text-align: center;
+            padding: 20px 20px 10px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            font-weight: 900;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+
+        /* Main layout: sides + center */
+        .game-layout {
+            display: flex;
+            min-height: calc(100vh - 120px);
+            padding: 10px;
+            gap: 10px;
+        }
+
+        /* Side panels for revealed cards */
+        .side-panel {
+            flex: 1;
+            min-width: 180px;
+            max-width: 260px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow-y: auto;
+            max-height: calc(100vh - 130px);
+            padding: 5px;
+        }
+
+        .side-panel::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .side-panel::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.4);
+            border-radius: 3px;
+        }
+
+        .revealed-card {
+            background: white;
+            border-radius: 16px;
+            padding: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            text-align: center;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-20px) scale(0.8); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .revealed-card .revealed-emoji {
+            font-size: 2.5em;
+            margin-bottom: 4px;
+        }
+
+        .revealed-card .revealed-label {
+            font-size: 1em;
+            font-weight: 700;
+            color: #555;
+            margin-bottom: 6px;
+        }
+
+        .revealed-card .names-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            justify-content: center;
+        }
+
+        .name-tag {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            color: white;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 700;
+        }
+
+        .no-names {
+            font-size: 0.8em;
+            color: #aaa;
+            font-style: italic;
+        }
+
+        /* Center area */
+        .center-area {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-width: 300px;
+        }
+
+        /* Card stack */
+        .card-stack {
+            position: relative;
+            width: 280px;
+            height: 380px;
+            cursor: pointer;
+            perspective: 1000px;
+            margin-bottom: 20px;
+        }
+
+        /* Stacked cards behind (decorative) */
+        .stack-shadow {
+            position: absolute;
+            width: 280px;
+            height: 380px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.3);
+        }
+
+        .stack-shadow:nth-child(1) {
+            top: 8px;
+            left: 6px;
+            transform: rotate(2deg);
+        }
+
+        .stack-shadow:nth-child(2) {
+            top: 4px;
+            left: 3px;
+            transform: rotate(-1deg);
+        }
+
+        /* The flippable card */
+        .card-flipper {
+            position: relative;
+            width: 280px;
+            height: 380px;
+            transition: transform 0.6s ease;
+            transform-style: preserve-3d;
+        }
+
+        .card-flipper.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 20px;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+        }
+
+        /* Back of card */
+        .card-back {
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+            border: 4px solid white;
+            color: white;
+            text-align: center;
+            padding: 30px;
+        }
+
+        .card-back .back-title {
+            font-size: 1.8em;
+            font-weight: 900;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .card-back .back-emoji {
+            font-size: 4em;
+            margin-bottom: 15px;
+        }
+
+        .card-back .back-hint {
+            font-size: 1em;
+            opacity: 0.8;
+        }
+
+        .card-back .remaining-count {
+            margin-top: 15px;
+            background: rgba(255,255,255,0.2);
+            padding: 6px 18px;
+            border-radius: 20px;
+            font-size: 0.95em;
+            font-weight: 700;
+        }
+
+        /* Front of card */
+        .card-front {
+            background: white;
+            border: 4px solid #ffd166;
+            transform: rotateY(180deg);
+            padding: 20px;
+        }
+
+        .card-front .front-emoji {
+            font-size: 6em;
+            margin-bottom: 10px;
+        }
+
+        .card-front .front-label {
+            font-size: 1.8em;
+            font-weight: 900;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .card-front .front-description {
+            font-size: 0.95em;
+            color: #777;
+            margin-bottom: 10px;
+        }
+
+        /* Name input area (below the card) */
+        .name-input-area {
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.4s ease;
+            pointer-events: none;
+        }
+
+        .name-input-area.visible {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: all;
+        }
+
+        .name-input-area label {
+            display: block;
+            color: white;
+            font-size: 1.15em;
+            font-weight: 700;
+            margin-bottom: 8px;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+        }
+
+        .input-row {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+
+        .name-input {
+            flex: 1;
+            max-width: 250px;
+            padding: 10px 18px;
+            border: 3px solid white;
+            border-radius: 50px;
+            font-size: 1.1em;
+            font-family: 'Heebo', sans-serif;
+            font-weight: 700;
+            text-align: center;
+            outline: none;
+            background: rgba(255,255,255,0.9);
+            color: #333;
+        }
+
+        .name-input:focus {
+            border-color: #ffd166;
+            box-shadow: 0 0 0 3px rgba(255,209,102,0.4);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #ffd166, #ffaa00);
+            color: #333;
+            border: none;
+            padding: 10px 24px;
+            font-size: 1.1em;
+            font-weight: 900;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: 'Heebo', sans-serif;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .btn.secondary {
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+            color: white;
+        }
+
+        .added-names {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+            margin: 8px 0;
+            min-height: 30px;
+        }
+
+        .added-name-tag {
+            background: white;
+            color: #6c5ce7;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 0.95em;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .remove-name {
+            cursor: pointer;
+            font-size: 1.1em;
+            color: #f5576c;
+            line-height: 1;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        /* Progress bar */
+        .progress-bar {
+            width: 100%;
+            max-width: 300px;
+            height: 10px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 5px;
+            margin: 10px auto 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ffd166, #6c5ce7);
+            border-radius: 5px;
+            transition: width 0.5s ease;
+        }
+
+        .progress-text {
+            color: white;
+            font-size: 0.9em;
+            font-weight: 700;
+            text-align: center;
+            margin-top: 4px;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+        }
+
+        /* Start screen */
+        .start-screen {
+            text-align: center;
+            color: white;
+            padding: 40px 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .start-screen h2 {
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        .start-screen .big-emoji {
+            font-size: 5em;
+            margin: 20px 0;
+        }
+
+        .rules-box {
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            padding: 25px;
+            border-radius: 20px;
+            margin: 20px auto;
+            text-align: right;
+            line-height: 2;
+            font-size: 1.1em;
+        }
+
+        .rules-box h3 {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        /* End screen */
+        .end-screen {
+            text-align: center;
+            color: white;
+            padding: 30px 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .end-screen h2 {
+            font-size: 2.2em;
+            margin-bottom: 20px;
+        }
+
+        .all-cards-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .summary-card {
+            background: white;
+            border-radius: 16px;
+            padding: 15px;
+            width: 160px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            animation: popIn 0.3s ease-out both;
+        }
+
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.5); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .summary-card .summary-emoji {
+            font-size: 2.5em;
+            margin-bottom: 5px;
+        }
+
+        .summary-card .summary-label {
+            font-size: 1em;
+            font-weight: 700;
+            color: #555;
+            margin-bottom: 8px;
+        }
+
+        .summary-card .summary-names {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 3px;
+            justify-content: center;
+        }
+
+        .summary-card .summary-name-tag {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 700;
+        }
+
+        .summary-card .no-one {
+            font-size: 0.8em;
+            color: #ccc;
+            font-style: italic;
+        }
+
+        /* Click instruction pulse */
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+        }
+
+        .card-stack.clickable .card-flipper {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .card-stack.clickable:hover .card-flipper {
+            animation: none;
+            transform: scale(1.02);
+        }
+
+        /* Confetti */
+        .confetti-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+            overflow: hidden;
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            top: -10px;
+            opacity: 0;
+        }
+
+        @keyframes confetti-fall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        @media (max-width: 900px) {
+            .game-layout {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .side-panel {
+                flex-direction: row;
+                flex-wrap: wrap;
+                max-width: 100%;
+                max-height: none;
+                justify-content: center;
+                overflow-y: visible;
+            }
+
+            .revealed-card {
+                width: 130px;
+            }
+
+            .revealed-card .revealed-emoji {
+                font-size: 2em;
+            }
+
+            .center-area {
+                order: -1;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 { font-size: 1.8em; }
+            .card-stack { width: 240px; height: 330px; }
+            .stack-shadow { width: 240px; height: 330px; }
+            .card-flipper { width: 240px; height: 330px; }
+            .card-front .front-emoji { font-size: 4.5em; }
+            .card-back .back-title { font-size: 1.4em; }
+            .card-back .back-emoji { font-size: 3em; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="confetti-container" id="confettiContainer"></div>
+
+<div class="header">
+    <h1>מי מרגיש כמוני? 💛</h1>
+    <p>משחק קלפים לזיהוי רגשות</p>
+</div>
+
+<div id="app"></div>
+
+<script>
+// ============================================
+// FEELINGS CARDS DATA
+// ============================================
+const FEELINGS = [
+    { emoji: '😊', label: 'שמח', description: 'כשמשהו טוב קורה לי' },
+    { emoji: '😢', label: 'עצוב', description: 'כשמשהו גורם לי לבכות' },
+    { emoji: '😠', label: 'כועס', description: 'כשמשהו מרגיז אותי' },
+    { emoji: '😨', label: 'מפחד', description: 'כשמשהו מפחיד אותי' },
+    { emoji: '😲', label: 'מופתע', description: 'כשקורה משהו שלא ציפיתי' },
+    { emoji: '😳', label: 'מתבייש', description: 'כשאני מרגיש מבוכה' },
+    { emoji: '🥰', label: 'אוהב', description: 'כשאני מרגיש אהבה' },
+    { emoji: '🤩', label: 'מתרגש', description: 'כשאני מחכה למשהו מיוחד' },
+    { emoji: '😔', label: 'בודד', description: 'כשאני מרגיש לבד' },
+    { emoji: '😌', label: 'רגוע', description: 'כשהכל שקט ונעים' },
+    { emoji: '😤', label: 'מתוסכל', description: 'כשמשהו לא מצליח לי' },
+    { emoji: '😟', label: 'מודאג', description: 'כשאני חושב על משהו מדאיג' },
+    { emoji: '🤗', label: 'נדיב', description: 'כשאני רוצה לעזור למישהו' },
+    { emoji: '😒', label: 'מקנא', description: 'כשמישהו אחר מקבל משהו שאני רוצה' },
+    { emoji: '🥱', label: 'משועמם', description: 'כשאין לי מה לעשות' },
+    { emoji: '😬', label: 'לחוץ', description: 'כשיש לי הרבה דברים לעשות' },
+];
+
+// ============================================
+// GAME STATE
+// ============================================
+let state = {
+    screen: 'start', // start | playing | end
+    cards: [],        // shuffled copy of FEELINGS
+    currentIndex: 0,  // which card are we on
+    isFlipped: false,
+    currentNames: [],  // names for the current card
+    revealedCards: [], // { emoji, label, description, names: [] }
+};
+
+function shuffleArray(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
+// ============================================
+// GAME LOGIC
+// ============================================
+function startGame() {
+    state.cards = shuffleArray(FEELINGS);
+    state.currentIndex = 0;
+    state.isFlipped = false;
+    state.currentNames = [];
+    state.revealedCards = [];
+    state.screen = 'playing';
+    render();
+}
+
+function flipCard() {
+    if (state.isFlipped) return;
+    state.isFlipped = true;
+    render();
+}
+
+function addName(name) {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    if (state.currentNames.includes(trimmed)) return;
+    state.currentNames.push(trimmed);
+    render();
+    // Focus back on input
+    setTimeout(() => {
+        const input = document.getElementById('nameInput');
+        if (input) { input.value = ''; input.focus(); }
+    }, 50);
+}
+
+function removeName(index) {
+    state.currentNames.splice(index, 1);
+    render();
+}
+
+function nextCard() {
+    // Save current card
+    const card = state.cards[state.currentIndex];
+    state.revealedCards.push({
+        emoji: card.emoji,
+        label: card.label,
+        description: card.description,
+        names: [...state.currentNames],
+    });
+
+    state.currentIndex++;
+    state.currentNames = [];
+    state.isFlipped = false;
+
+    if (state.currentIndex >= state.cards.length) {
+        state.screen = 'end';
+        showConfetti();
+    }
+
+    render();
+}
+
+function resetGame() {
+    state.screen = 'start';
+    render();
+}
+
+// ============================================
+// CONFETTI
+// ============================================
+function showConfetti() {
+    const container = document.getElementById('confettiContainer');
+    const colors = ['#ffd166', '#f5576c', '#6c5ce7', '#a29bfe', '#f093fb', '#00cec9'];
+    for (let i = 0; i < 60; i++) {
+        const c = document.createElement('div');
+        c.className = 'confetti';
+        c.style.left = Math.random() * 100 + '%';
+        c.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        c.style.width = (Math.random() * 10 + 5) + 'px';
+        c.style.height = (Math.random() * 10 + 5) + 'px';
+        c.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+        c.style.animation = `confetti-fall ${Math.random() * 2 + 1.5}s linear ${Math.random() * 0.5}s forwards`;
+        container.appendChild(c);
+    }
+    setTimeout(() => { container.innerHTML = ''; }, 3000);
+}
+
+// ============================================
+// RENDER
+// ============================================
+function render() {
+    const app = document.getElementById('app');
+
+    if (state.screen === 'start') {
+        app.innerHTML = renderStartScreen();
+    } else if (state.screen === 'playing') {
+        app.innerHTML = renderPlayingScreen();
+    } else if (state.screen === 'end') {
+        app.innerHTML = renderEndScreen();
+    }
+
+    bindEvents();
+}
+
+function renderStartScreen() {
+    return `
+        <div class="start-screen">
+            <div class="big-emoji">🃏💛</div>
+            <h2>ברוכים הבאים!</h2>
+            <div class="rules-box">
+                <h3>📋 איך משחקים?</h3>
+                <p>🔹 לפניכם ערמת קלפים עם רגשות שונים</p>
+                <p>🔹 לחצו על הקלף כדי להפוך אותו ולגלות את הרגש</p>
+                <p>🔹 כל ילד שמרגיש ככה - כותב את השם שלו!</p>
+                <p>🔹 כל קלף שנפתח נשאר גלוי בצד המסך</p>
+                <p>🔹 בסוף נראה את כל הרגשות ומי מרגיש כמו מי 💛</p>
+            </div>
+            <button class="btn" id="startBtn" style="font-size: 1.4em; padding: 15px 50px;">
+                🎉 בואו נתחיל!
+            </button>
+        </div>
+    `;
+}
+
+function renderPlayingScreen() {
+    const card = state.cards[state.currentIndex];
+    const remaining = state.cards.length - state.currentIndex;
+    const progress = (state.revealedCards.length / state.cards.length) * 100;
+
+    // Split revealed cards into left and right sides
+    const leftCards = [];
+    const rightCards = [];
+    state.revealedCards.forEach((c, i) => {
+        if (i % 2 === 0) rightCards.push(c);
+        else leftCards.push(c);
+    });
+
+    const renderSideCards = (cards) => {
+        return cards.map(c => `
+            <div class="revealed-card">
+                <div class="revealed-emoji">${c.emoji}</div>
+                <div class="revealed-label">${c.label}</div>
+                <div class="names-list">
+                    ${c.names.length > 0
+                        ? c.names.map(n => `<span class="name-tag">${n}</span>`).join('')
+                        : '<span class="no-names">אף אחד</span>'
+                    }
+                </div>
+            </div>
+        `).join('');
+    };
+
+    const namesHtml = state.currentNames.map((n, i) => `
+        <span class="added-name-tag">
+            ${n}
+            <span class="remove-name" data-name-idx="${i}">&times;</span>
+        </span>
+    `).join('');
+
+    return `
+        <div class="game-layout">
+            <div class="side-panel" id="rightPanel">
+                ${renderSideCards(rightCards)}
+            </div>
+
+            <div class="center-area">
+                <div class="card-stack ${!state.isFlipped ? 'clickable' : ''}" id="cardStack">
+                    <div class="stack-shadow"></div>
+                    <div class="stack-shadow"></div>
+                    <div class="card-flipper ${state.isFlipped ? 'flipped' : ''}">
+                        <div class="card-face card-back">
+                            <div class="back-emoji">🤔</div>
+                            <div class="back-title">מי מרגיש כמוני?</div>
+                            <div class="back-hint">לחצו כדי לגלות!</div>
+                            <div class="remaining-count">נותרו ${remaining} קלפים</div>
+                        </div>
+                        <div class="card-face card-front">
+                            <div class="front-emoji">${card.emoji}</div>
+                            <div class="front-label">${card.label}</div>
+                            <div class="front-description">${card.description}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="name-input-area ${state.isFlipped ? 'visible' : ''}">
+                    <label>מי מרגיש ${card.label}? כתבו את השם!</label>
+                    <div class="input-row">
+                        <input type="text" class="name-input" id="nameInput"
+                               placeholder="שם הילד/ה..."
+                               autocomplete="off">
+                        <button class="btn" id="addNameBtn">הוסף</button>
+                    </div>
+                    <div class="added-names" id="addedNames">
+                        ${namesHtml}
+                    </div>
+                    <div class="action-buttons">
+                        <button class="btn secondary" id="nextCardBtn">
+                            ${state.currentIndex < state.cards.length - 1 ? 'הקלף הבא ←' : 'סיום! 🎉'}
+                        </button>
+                    </div>
+                </div>
+
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${progress}%"></div>
+                </div>
+                <div class="progress-text">${state.revealedCards.length} מתוך ${state.cards.length} קלפים נפתחו</div>
+            </div>
+
+            <div class="side-panel" id="leftPanel">
+                ${renderSideCards(leftCards)}
+            </div>
+        </div>
+    `;
+}
+
+function renderEndScreen() {
+    const cardsHtml = state.revealedCards.map((c, i) => `
+        <div class="summary-card" style="animation-delay: ${i * 0.1}s">
+            <div class="summary-emoji">${c.emoji}</div>
+            <div class="summary-label">${c.label}</div>
+            <div class="summary-names">
+                ${c.names.length > 0
+                    ? c.names.map(n => `<span class="summary-name-tag">${n}</span>`).join('')
+                    : '<span class="no-one">---</span>'
+                }
+            </div>
+        </div>
+    `).join('');
+
+    return `
+        <div class="end-screen">
+            <h2>🎉 כל הקלפים נפתחו! 🎉</h2>
+            <p style="font-size: 1.2em; margin-bottom: 20px; opacity: 0.9;">
+                הנה כל הרגשות שגילינו היום:
+            </p>
+            <div class="all-cards-grid">
+                ${cardsHtml}
+            </div>
+            <br>
+            <button class="btn" id="playAgainBtn" style="font-size: 1.3em; padding: 15px 40px;">
+                🔄 שחקו שוב
+            </button>
+        </div>
+    `;
+}
+
+// ============================================
+// EVENT BINDING
+// ============================================
+function bindEvents() {
+    const startBtn = document.getElementById('startBtn');
+    if (startBtn) {
+        startBtn.addEventListener('click', startGame);
+    }
+
+    const cardStack = document.getElementById('cardStack');
+    if (cardStack) {
+        cardStack.addEventListener('click', flipCard);
+    }
+
+    const addNameBtn = document.getElementById('addNameBtn');
+    const nameInput = document.getElementById('nameInput');
+    if (addNameBtn && nameInput) {
+        addNameBtn.addEventListener('click', () => addName(nameInput.value));
+        nameInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                addName(nameInput.value);
+            }
+        });
+    }
+
+    document.querySelectorAll('.remove-name').forEach(el => {
+        el.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const idx = parseInt(el.dataset.nameIdx);
+            removeName(idx);
+        });
+    });
+
+    const nextCardBtn = document.getElementById('nextCardBtn');
+    if (nextCardBtn) {
+        nextCardBtn.addEventListener('click', nextCard);
+    }
+
+    const playAgainBtn = document.getElementById('playAgainBtn');
+    if (playAgainBtn) {
+        playAgainBtn.addEventListener('click', resetGame);
+    }
+}
+
+// Initial render
+render();
+</script>
+</body>
+</html>
