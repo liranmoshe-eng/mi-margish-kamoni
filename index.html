@@ -610,6 +610,87 @@
             opacity: 0.8;
         }
 
+        /* Edit revealed cards */
+        .revealed-card {
+            position: relative;
+            cursor: pointer;
+            transition: box-shadow 0.2s;
+        }
+
+        .revealed-card:hover {
+            box-shadow: 0 4px 20px rgba(108,92,231,0.3);
+        }
+
+        .revealed-card.editing {
+            border: 2px solid #6c5ce7;
+            box-shadow: 0 4px 20px rgba(108,92,231,0.4);
+        }
+
+        .edit-hint {
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            font-size: 0.75em;
+            opacity: 0.3;
+            transition: opacity 0.2s;
+        }
+
+        .revealed-card:hover .edit-hint {
+            opacity: 0.8;
+        }
+
+        .name-tag .remove-revealed-name {
+            cursor: pointer;
+            margin-right: 4px;
+            font-size: 1.1em;
+            color: rgba(255,255,255,0.8);
+        }
+
+        .name-tag .remove-revealed-name:hover {
+            color: white;
+        }
+
+        .edit-name-row {
+            display: flex;
+            gap: 4px;
+            margin-top: 6px;
+        }
+
+        .edit-name-input {
+            flex: 1;
+            padding: 4px 8px;
+            border: 2px solid #6c5ce7;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-family: 'Heebo', sans-serif;
+            text-align: center;
+            outline: none;
+            min-width: 0;
+        }
+
+        .edit-name-input:focus {
+            border-color: #ffd166;
+        }
+
+        .edit-name-add-btn {
+            background: #6c5ce7;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            font-size: 1.1em;
+            cursor: pointer;
+            font-family: 'Heebo', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .edit-name-add-btn:hover {
+            background: #a29bfe;
+        }
+
         /* Image cards */
         .front-image {
             max-width: 90%;
@@ -749,6 +830,7 @@ let state = {
     isFlipped: false,
     currentNames: [],
     revealedCards: [],
+    editingCardIndex: -1,
 };
 
 function shuffleArray(arr) {
@@ -800,6 +882,29 @@ function addName(name) {
 
 function removeName(index) {
     state.currentNames.splice(index, 1);
+    render();
+}
+
+function editRevealedCard(index) {
+    state.editingCardIndex = state.editingCardIndex === index ? -1 : index;
+    render();
+}
+
+function addNameToRevealed(index, name) {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const card = state.revealedCards[index];
+    if (card.names.includes(trimmed)) return;
+    card.names.push(trimmed);
+    render();
+    setTimeout(() => {
+        const input = document.getElementById('editNameInput');
+        if (input) { input.value = ''; input.focus(); }
+    }, 50);
+}
+
+function removeNameFromRevealed(cardIndex, nameIndex) {
+    state.revealedCards[cardIndex].names.splice(nameIndex, 1);
     render();
 }
 
@@ -973,18 +1078,28 @@ function renderPlayingScreen() {
         else leftCards.push(c);
     });
 
-    const renderSideCards = (cards) => {
-        return cards.map(c => `
-            <div class="revealed-card">
-                ${renderRevealedThumb(c)}
-                <div class="names-list">
-                    ${c.names.length > 0
-                        ? c.names.map(n => `<span class="name-tag">${n}</span>`).join('')
-                        : '<span class="no-names">אף אחד</span>'
-                    }
+    const renderSideCards = (cards, startIdx) => {
+        return cards.map((c, localIdx) => {
+            const realIdx = startIdx === 'even' ? localIdx * 2 : localIdx * 2 + 1;
+            const isEditing = state.editingCardIndex === realIdx;
+            const namesHtml = c.names.length > 0
+                ? c.names.map((n, ni) => `<span class="name-tag">${n}${isEditing ? `<span class="remove-revealed-name" data-card-idx="${realIdx}" data-name-idx="${ni}">&times;</span>` : ''}</span>`).join('')
+                : '<span class="no-names">אף אחד</span>';
+            const editSection = isEditing ? `
+                <div class="edit-name-row">
+                    <input type="text" class="edit-name-input" id="editNameInput" placeholder="שם..." autocomplete="off">
+                    <button class="edit-name-add-btn" data-card-idx="${realIdx}">+</button>
                 </div>
-            </div>
-        `).join('');
+            ` : '';
+            return `
+                <div class="revealed-card ${isEditing ? 'editing' : ''}" data-edit-idx="${realIdx}">
+                    ${renderRevealedThumb(c)}
+                    <div class="names-list">${namesHtml}</div>
+                    ${editSection}
+                    <div class="edit-hint" data-edit-idx="${realIdx}">✏️</div>
+                </div>
+            `;
+        }).join('');
     };
 
     const namesHtml = state.currentNames.map((n, i) => `
@@ -997,7 +1112,7 @@ function renderPlayingScreen() {
     return `
         <div class="game-layout">
             <div class="side-panel" id="rightPanel">
-                ${renderSideCards(rightCards)}
+                ${renderSideCards(rightCards, 'even')}
             </div>
 
             <div class="center-area">
@@ -1045,7 +1160,7 @@ function renderPlayingScreen() {
             </div>
 
             <div class="side-panel" id="leftPanel">
-                ${renderSideCards(leftCards)}
+                ${renderSideCards(leftCards, 'odd')}
             </div>
         </div>
     `;
@@ -1132,6 +1247,40 @@ function bindEvents() {
     const playAgainBtn = document.getElementById('playAgainBtn');
     if (playAgainBtn) {
         playAgainBtn.addEventListener('click', resetGame);
+    }
+
+    // Edit revealed cards
+    document.querySelectorAll('.edit-hint').forEach(el => {
+        el.addEventListener('click', (e) => {
+            e.stopPropagation();
+            editRevealedCard(parseInt(el.dataset.editIdx));
+        });
+    });
+
+    document.querySelectorAll('.remove-revealed-name').forEach(el => {
+        el.addEventListener('click', (e) => {
+            e.stopPropagation();
+            removeNameFromRevealed(parseInt(el.dataset.cardIdx), parseInt(el.dataset.nameIdx));
+        });
+    });
+
+    document.querySelectorAll('.edit-name-add-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const input = document.getElementById('editNameInput');
+            if (input) addNameToRevealed(parseInt(btn.dataset.cardIdx), input.value);
+        });
+    });
+
+    const editInput = document.getElementById('editNameInput');
+    if (editInput) {
+        editInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const btn = document.querySelector('.edit-name-add-btn');
+                if (btn) addNameToRevealed(parseInt(btn.dataset.cardIdx), editInput.value);
+            }
+        });
+        editInput.focus();
     }
 }
 
