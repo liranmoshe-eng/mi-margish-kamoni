@@ -559,6 +559,81 @@
             }
         }
 
+        /* Deck selection */
+        .deck-select {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 20px 0 30px;
+        }
+
+        .deck-btn {
+            background: rgba(255,255,255,0.2);
+            border: 3px solid rgba(255,255,255,0.4);
+            border-radius: 16px;
+            padding: 14px 20px;
+            cursor: pointer;
+            font-family: 'Heebo', sans-serif;
+            color: white;
+            text-align: center;
+            transition: all 0.3s;
+            min-width: 130px;
+        }
+
+        .deck-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+
+        .deck-btn.active {
+            background: rgba(255,255,255,0.35);
+            border-color: #ffd166;
+            box-shadow: 0 0 15px rgba(255,209,102,0.4);
+        }
+
+        .deck-icon {
+            display: block;
+            font-size: 2em;
+            margin-bottom: 4px;
+        }
+
+        .deck-label {
+            display: block;
+            font-size: 1.1em;
+            font-weight: 700;
+        }
+
+        .deck-count {
+            display: block;
+            font-size: 0.8em;
+            opacity: 0.8;
+        }
+
+        /* Image cards */
+        .front-image {
+            max-width: 90%;
+            max-height: 85%;
+            object-fit: contain;
+            border-radius: 12px;
+        }
+
+        .revealed-image {
+            width: 100%;
+            max-height: 100px;
+            object-fit: contain;
+            border-radius: 8px;
+            margin-bottom: 6px;
+        }
+
+        .summary-image {
+            width: 100%;
+            max-height: 100px;
+            object-fit: contain;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
         @media (max-width: 480px) {
             .header h1 { font-size: 1.8em; }
             .card-stack { width: 240px; height: 330px; }
@@ -576,7 +651,7 @@
 
 <div class="header">
     <h1>מי מרגיש כמוני? 💛</h1>
-    <p>משחק קלפים לזיהוי רגשות</p>
+    <p>משחק קלפים להכרת עצמי</p>
 </div>
 
 <div id="app"></div>
@@ -585,35 +660,95 @@
 // ============================================
 // FEELINGS CARDS DATA
 // ============================================
+// ============================================
+// DECKS
+// ============================================
 const FEELINGS = [
-    { emoji: '😊', label: 'שמח', description: 'כשמשהו טוב קורה לי' },
-    { emoji: '😢', label: 'עצוב', description: 'כשמשהו גורם לי לבכות' },
-    { emoji: '😠', label: 'כועס', description: 'כשמשהו מרגיז אותי' },
-    { emoji: '😨', label: 'מפחד', description: 'כשמשהו מפחיד אותי' },
-    { emoji: '😲', label: 'מופתע', description: 'כשקורה משהו שלא ציפיתי' },
-    { emoji: '😳', label: 'מתבייש', description: 'כשאני מרגיש מבוכה' },
-    { emoji: '🥰', label: 'אוהב', description: 'כשאני מרגיש אהבה' },
-    { emoji: '🤩', label: 'מתרגש', description: 'כשאני מחכה למשהו מיוחד' },
-    { emoji: '😔', label: 'בודד', description: 'כשאני מרגיש לבד' },
-    { emoji: '😌', label: 'רגוע', description: 'כשהכל שקט ונעים' },
-    { emoji: '😤', label: 'מתוסכל', description: 'כשמשהו לא מצליח לי' },
-    { emoji: '😟', label: 'מודאג', description: 'כשאני חושב על משהו מדאיג' },
-    { emoji: '🤗', label: 'נדיב', description: 'כשאני רוצה לעזור למישהו' },
-    { emoji: '😒', label: 'מקנא', description: 'כשמישהו אחר מקבל משהו שאני רוצה' },
-    { emoji: '🥱', label: 'משועמם', description: 'כשאין לי מה לעשות' },
-    { emoji: '😬', label: 'לחוץ', description: 'כשיש לי הרבה דברים לעשות' },
+    { type:'emoji', emoji: '😊', label: 'שמח', description: 'כשמשהו טוב קורה לי' },
+    { type:'emoji', emoji: '😢', label: 'עצוב', description: 'כשמשהו גורם לי לבכות' },
+    { type:'emoji', emoji: '😠', label: 'כועס', description: 'כשמשהו מרגיז אותי' },
+    { type:'emoji', emoji: '😨', label: 'מפחד', description: 'כשמשהו מפחיד אותי' },
+    { type:'emoji', emoji: '😲', label: 'מופתע', description: 'כשקורה משהו שלא ציפיתי' },
+    { type:'emoji', emoji: '😳', label: 'מתבייש', description: 'כשאני מרגיש מבוכה' },
+    { type:'emoji', emoji: '🥰', label: 'אוהב', description: 'כשאני מרגיש אהבה' },
+    { type:'emoji', emoji: '🤩', label: 'מתרגש', description: 'כשאני מחכה למשהו מיוחד' },
+    { type:'emoji', emoji: '😔', label: 'בודד', description: 'כשאני מרגיש לבד' },
+    { type:'emoji', emoji: '😌', label: 'רגוע', description: 'כשהכל שקט ונעים' },
+    { type:'emoji', emoji: '😤', label: 'מתוסכל', description: 'כשמשהו לא מצליח לי' },
+    { type:'emoji', emoji: '😟', label: 'מודאג', description: 'כשאני חושב על משהו מדאיג' },
+    { type:'emoji', emoji: '🤗', label: 'נדיב', description: 'כשאני רוצה לעזור למישהו' },
+    { type:'emoji', emoji: '😒', label: 'מקנא', description: 'כשמישהו אחר מקבל משהו שאני רוצה' },
+    { type:'emoji', emoji: '🥱', label: 'משועמם', description: 'כשאין לי מה לעשות' },
+    { type:'emoji', emoji: '😬', label: 'לחוץ', description: 'כשיש לי הרבה דברים לעשות' },
 ];
+
+const ANIMALS = [
+    { type:'image', image:'assets/animals/חרגול_קופץ.png' },
+    { type:'image', image:'assets/animals/צב_ממוקד.png' },
+    { type:'image', image:'assets/animals/עלוקה.png' },
+    { type:'image', image:'assets/animals/אריה.png' },
+    { type:'image', image:'assets/animals/תמנון.png' },
+    { type:'image', image:'assets/animals/טווס.png' },
+    { type:'image', image:'assets/animals/זברה.png' },
+    { type:'image', image:'assets/animals/תוכי.png' },
+    { type:'image', image:'assets/animals/דג_שתיקה.png' },
+    { type:'image', image:'assets/animals/צפרדע.png' },
+    { type:'image', image:'assets/animals/סוריקטה.png' },
+    { type:'image', image:'assets/animals/ארנב.png' },
+    { type:'image', image:'assets/animals/כלבלב.png' },
+    { type:'image', image:'assets/animals/עצלן.png' },
+    { type:'image', image:'assets/animals/סנאי.png' },
+    { type:'image', image:'assets/animals/עכבר.png' },
+    { type:'image', image:'assets/animals/עיט.png' },
+    { type:'image', image:'assets/animals/פרפר.png' },
+    { type:'image', image:'assets/animals/עכביש.png' },
+    { type:'image', image:'assets/animals/עורב.png' },
+    { type:'image', image:'assets/animals/ינשוף.png' },
+    { type:'image', image:'assets/animals/נמר.png' },
+    { type:'image', image:'assets/animals/קוף.png' },
+    { type:'image', image:'assets/animals/קיפוד.png' },
+    { type:'image', image:'assets/animals/דובי_נעים.png' },
+    { type:'image', image:'assets/animals/דבורה.png' },
+    { type:'image', image:'assets/animals/קואלה.png' },
+    { type:'image', image:'assets/animals/דג_נפוח.png' },
+    { type:'image', image:'assets/animals/סוס_פרא.png' },
+    { type:'image', image:'assets/animals/לטאה.png' },
+    { type:'image', image:'assets/animals/נחש.png' },
+];
+
+const WEATHER = [
+    { type:'image', image:'assets/weather/image1.png' },
+    { type:'image', image:'assets/weather/image2.jpeg' },
+    { type:'image', image:'assets/weather/image3.png' },
+    { type:'image', image:'assets/weather/image4.jpeg' },
+    { type:'image', image:'assets/weather/image5.jpeg' },
+    { type:'image', image:'assets/weather/image6.jpeg' },
+    { type:'image', image:'assets/weather/image7.jpeg' },
+    { type:'image', image:'assets/weather/image8.png' },
+    { type:'image', image:'assets/weather/image9.jpeg' },
+    { type:'image', image:'assets/weather/image10.jpeg' },
+    { type:'image', image:'assets/weather/image11.png' },
+    { type:'image', image:'assets/weather/image12.jpeg' },
+    { type:'image', image:'assets/weather/image13.jpeg' },
+];
+
+const DECKS = {
+    feelings: { cards: FEELINGS, title: 'רגשות', icon: '💭', backEmoji: '🤔', question: 'מי מרגיש ככה?' },
+    animals:  { cards: ANIMALS,  title: 'חיות',  icon: '🐾', backEmoji: '🐾', question: 'מי מרגיש כמו החיה הזו?' },
+    weather:  { cards: WEATHER,  title: 'מזג אוויר', icon: '🌤', backEmoji: '🌤', question: 'מי מרגיש ככה?' },
+};
 
 // ============================================
 // GAME STATE
 // ============================================
 let state = {
-    screen: 'start', // start | playing | end
-    cards: [],        // shuffled copy of FEELINGS
-    currentIndex: 0,  // which card are we on
+    screen: 'start',
+    deck: 'feelings',
+    cards: [],
+    currentIndex: 0,
     isFlipped: false,
-    currentNames: [],  // names for the current card
-    revealedCards: [], // { emoji, label, description, names: [] }
+    currentNames: [],
+    revealedCards: [],
 };
 
 function shuffleArray(arr) {
@@ -628,8 +763,14 @@ function shuffleArray(arr) {
 // ============================================
 // GAME LOGIC
 // ============================================
+function selectDeck(deck) {
+    state.deck = deck;
+    render();
+}
+
 function startGame() {
-    state.cards = shuffleArray(FEELINGS);
+    const deckData = DECKS[state.deck];
+    state.cards = shuffleArray(deckData.cards);
     state.currentIndex = 0;
     state.isFlipped = false;
     state.currentNames = [];
@@ -663,16 +804,32 @@ function removeName(index) {
 }
 
 function nextCard() {
-    // Save current card
     const card = state.cards[state.currentIndex];
-    state.revealedCards.push({
-        emoji: card.emoji,
-        label: card.label,
-        description: card.description,
-        names: [...state.currentNames],
-    });
 
-    state.currentIndex++;
+    if (state.currentNames.length > 0) {
+        // Card has names - save it as revealed
+        const saved = { names: [...state.currentNames], type: card.type };
+        if (card.type === 'image') {
+            saved.image = card.image;
+        } else {
+            saved.emoji = card.emoji;
+            saved.label = card.label;
+            saved.description = card.description;
+        }
+        state.revealedCards.push(saved);
+        state.currentIndex++;
+    } else {
+        // No names - return card to the deck at a random later position
+        const removed = state.cards.splice(state.currentIndex, 1)[0];
+        if (state.cards.length > state.currentIndex) {
+            const insertAt = state.currentIndex + Math.floor(Math.random() * (state.cards.length - state.currentIndex));
+            state.cards.splice(insertAt, 0, removed);
+        } else {
+            // Last card and no names - just put it back at the end
+            state.cards.push(removed);
+        }
+    }
+
     state.currentNames = [];
     state.isFlipped = false;
 
@@ -681,6 +838,20 @@ function nextCard() {
         showConfetti();
     }
 
+    render();
+}
+
+function endGame() {
+    // If current card has names, save it first
+    if (state.isFlipped && state.currentNames.length > 0) {
+        const card = state.cards[state.currentIndex];
+        const saved = { names: [...state.currentNames], type: card.type };
+        if (card.type === 'image') { saved.image = card.image; }
+        else { saved.emoji = card.emoji; saved.label = card.label; saved.description = card.description; }
+        state.revealedCards.push(saved);
+    }
+    state.screen = 'end';
+    showConfetti();
     render();
 }
 
@@ -727,17 +898,28 @@ function render() {
 }
 
 function renderStartScreen() {
+    const deckButtons = Object.entries(DECKS).map(([key, d]) => `
+        <button class="deck-btn ${state.deck === key ? 'active' : ''}" data-deck="${key}">
+            <span class="deck-icon">${d.icon}</span>
+            <span class="deck-label">${d.title}</span>
+            <span class="deck-count">${d.cards.length} קלפים</span>
+        </button>
+    `).join('');
+
     return `
         <div class="start-screen">
             <div class="big-emoji">🃏💛</div>
             <h2>ברוכים הבאים!</h2>
             <div class="rules-box">
                 <h3>📋 איך משחקים?</h3>
-                <p>🔹 לפניכם ערמת קלפים עם רגשות שונים</p>
-                <p>🔹 לחצו על הקלף כדי להפוך אותו ולגלות את הרגש</p>
+                <p>🔹 בחרו קטגוריה למשחק</p>
+                <p>🔹 לחצו על הקלף כדי להפוך אותו</p>
                 <p>🔹 כל ילד שמרגיש ככה - כותב את השם שלו!</p>
                 <p>🔹 כל קלף שנפתח נשאר גלוי בצד המסך</p>
-                <p>🔹 בסוף נראה את כל הרגשות ומי מרגיש כמו מי 💛</p>
+                <p>🔹 בסוף נראה מי מרגיש כמו מי 💛</p>
+            </div>
+            <div class="deck-select" id="deckSelect">
+                ${deckButtons}
             </div>
             <button class="btn" id="startBtn" style="font-size: 1.4em; padding: 15px 50px;">
                 🎉 בואו נתחיל!
@@ -746,12 +928,44 @@ function renderStartScreen() {
     `;
 }
 
+function renderCardFront(card) {
+    if (card.type === 'image') {
+        return `<img class="front-image" src="${card.image}" alt="">`;
+    }
+    return `
+        <div class="front-emoji">${card.emoji}</div>
+        <div class="front-label">${card.label}</div>
+        <div class="front-description">${card.description}</div>
+    `;
+}
+
+function renderRevealedThumb(c) {
+    if (c.type === 'image') {
+        return `<img class="revealed-image" src="${c.image}" alt="">`;
+    }
+    return `
+        <div class="revealed-emoji">${c.emoji}</div>
+        <div class="revealed-label">${c.label}</div>
+    `;
+}
+
+function renderSummaryThumb(c) {
+    if (c.type === 'image') {
+        return `<img class="summary-image" src="${c.image}" alt="">`;
+    }
+    return `
+        <div class="summary-emoji">${c.emoji}</div>
+        <div class="summary-label">${c.label}</div>
+    `;
+}
+
 function renderPlayingScreen() {
     const card = state.cards[state.currentIndex];
+    const deckData = DECKS[state.deck];
     const remaining = state.cards.length - state.currentIndex;
-    const progress = (state.revealedCards.length / state.cards.length) * 100;
+    const totalDeck = DECKS[state.deck].cards.length;
+    const progress = (state.revealedCards.length / totalDeck) * 100;
 
-    // Split revealed cards into left and right sides
     const leftCards = [];
     const rightCards = [];
     state.revealedCards.forEach((c, i) => {
@@ -762,8 +976,7 @@ function renderPlayingScreen() {
     const renderSideCards = (cards) => {
         return cards.map(c => `
             <div class="revealed-card">
-                <div class="revealed-emoji">${c.emoji}</div>
-                <div class="revealed-label">${c.label}</div>
+                ${renderRevealedThumb(c)}
                 <div class="names-list">
                     ${c.names.length > 0
                         ? c.names.map(n => `<span class="name-tag">${n}</span>`).join('')
@@ -793,21 +1006,19 @@ function renderPlayingScreen() {
                     <div class="stack-shadow"></div>
                     <div class="card-flipper ${state.isFlipped ? 'flipped' : ''}">
                         <div class="card-face card-back">
-                            <div class="back-emoji">🤔</div>
+                            <div class="back-emoji">${deckData.backEmoji}</div>
                             <div class="back-title">מי מרגיש כמוני?</div>
                             <div class="back-hint">לחצו כדי לגלות!</div>
                             <div class="remaining-count">נותרו ${remaining} קלפים</div>
                         </div>
                         <div class="card-face card-front">
-                            <div class="front-emoji">${card.emoji}</div>
-                            <div class="front-label">${card.label}</div>
-                            <div class="front-description">${card.description}</div>
+                            ${renderCardFront(card)}
                         </div>
                     </div>
                 </div>
 
                 <div class="name-input-area ${state.isFlipped ? 'visible' : ''}">
-                    <label>מי מרגיש ${card.label}? כתבו את השם!</label>
+                    <label>${deckData.question} כתבו את השם!</label>
                     <div class="input-row">
                         <input type="text" class="name-input" id="nameInput"
                                placeholder="שם הילד/ה..."
@@ -819,7 +1030,10 @@ function renderPlayingScreen() {
                     </div>
                     <div class="action-buttons">
                         <button class="btn secondary" id="nextCardBtn">
-                            ${state.currentIndex < state.cards.length - 1 ? 'הקלף הבא ←' : 'סיום! 🎉'}
+                            הקלף הבא ←
+                        </button>
+                        <button class="btn" id="endGameBtn" style="background: linear-gradient(135deg, #f5576c, #ff6b6b);">
+                            סיום 🎉
                         </button>
                     </div>
                 </div>
@@ -838,10 +1052,10 @@ function renderPlayingScreen() {
 }
 
 function renderEndScreen() {
+    const deckData = DECKS[state.deck];
     const cardsHtml = state.revealedCards.map((c, i) => `
         <div class="summary-card" style="animation-delay: ${i * 0.1}s">
-            <div class="summary-emoji">${c.emoji}</div>
-            <div class="summary-label">${c.label}</div>
+            ${renderSummaryThumb(c)}
             <div class="summary-names">
                 ${c.names.length > 0
                     ? c.names.map(n => `<span class="summary-name-tag">${n}</span>`).join('')
@@ -855,7 +1069,7 @@ function renderEndScreen() {
         <div class="end-screen">
             <h2>🎉 כל הקלפים נפתחו! 🎉</h2>
             <p style="font-size: 1.2em; margin-bottom: 20px; opacity: 0.9;">
-                הנה כל הרגשות שגילינו היום:
+                הנה כל ה${deckData.title} שגילינו היום:
             </p>
             <div class="all-cards-grid">
                 ${cardsHtml}
@@ -872,6 +1086,10 @@ function renderEndScreen() {
 // EVENT BINDING
 // ============================================
 function bindEvents() {
+    document.querySelectorAll('.deck-btn').forEach(btn => {
+        btn.addEventListener('click', () => selectDeck(btn.dataset.deck));
+    });
+
     const startBtn = document.getElementById('startBtn');
     if (startBtn) {
         startBtn.addEventListener('click', startGame);
@@ -906,6 +1124,11 @@ function bindEvents() {
         nextCardBtn.addEventListener('click', nextCard);
     }
 
+    const endGameBtn = document.getElementById('endGameBtn');
+    if (endGameBtn) {
+        endGameBtn.addEventListener('click', endGame);
+    }
+
     const playAgainBtn = document.getElementById('playAgainBtn');
     if (playAgainBtn) {
         playAgainBtn.addEventListener('click', resetGame);
@@ -915,5 +1138,6 @@ function bindEvents() {
 // Initial render
 render();
 </script>
+<footer style="text-align:center;padding:12px;font-size:13px;color:#888;direction:rtl;">פותח ע"י לירן משה, מטפלת באומנות ©</footer>
 </body>
 </html>
